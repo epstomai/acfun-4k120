@@ -4,6 +4,7 @@
 // @version      2.0.0
 // @description  AcFun 网页一键解锁 App 独占的 4K120 (2160P120)：①注入网页播放器，让清晰度菜单直接出现并能播 4K120；②面板列出全部清晰度的 m3u8 直链与 ffmpeg / N_m3u8DL-RE 下载命令。原理：复刻已验证可用的 App m3u8V2 接口（抓包登录态 + 可复用 mkey），把服务器砍过的网页 ksPlayJson 换成完整阶梯，直链 http→https、强制 H.264。
 // @author       reverse-skill
+// @license      MIT
 // @match        https://www.acfun.cn/v/ac*
 // @grant        unsafeWindow
 // @grant        GM_xmlhttpRequest
