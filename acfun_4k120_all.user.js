@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AcFun 4K120 全能解锁（播放器内播放 + 直链下载）
 // @namespace    https://github.com/epstomai/acfun-4k120
-// @version      3.0.0
+// @version      3.3.0
 // @description  AcFun 网页一键解锁 App 独占的 4K120 (2160P120)：①注入网页播放器，让清晰度菜单直接出现并能播 4K120；②面板列出全部清晰度的 m3u8 直链与 ffmpeg / N_m3u8DL-RE 下载命令。凭据全自动：用你自己浏览器里的 acfun.cn 登录态，自动换取 App 接口所需的 api_st，并读取网页 mkey——无任何硬编码、不泄露账号。
 // @author       reverse-skill
 // @license      MIT
@@ -34,16 +34,22 @@
   // ================= 状态 =================
   const ORIG_PARSE = W.JSON.parse.bind(W.JSON);
   let APP_RAW = null, APP_VID = null, APP_LIST = null;
-  let fetching = false, hookApplied = false, autoInjectScheduled = false;
+  let fetching = false, autoInjectScheduled = false, injectTimer = null;
   let apiStCache = null;   // 本会话缓存的 api_st（不持久化、不写盘）
 
   // ================= 工具 =================
   function getAcId() { const m = location.pathname.match(/ac(\d+)/); return m ? m[1] : null; }
   function getVideoId() {
+    // 优先取播放器当前正在播的分P（切P会实时更新），其次页面 pageInfo
+    try {
+      const vi = W._AcFunPlayer && W._AcFunPlayer.videoInfo;
+      if (vi && (vi.id || vi.videoId || vi.currentVideoId)) return String(vi.id || vi.videoId || vi.currentVideoId);
+    } catch (e) {}
     try {
       const pi = W.pageInfo;
-      const v = pi && (pi.currentVideoId || (pi.currentVideoInfo && (pi.currentVideoInfo.currentVideoId || pi.currentVideoInfo.id)));
-      if (v) return String(v);
+      const cvi = pi && pi.currentVideoInfo;
+      if (cvi && (cvi.id || cvi.currentVideoId)) return String(cvi.id || cvi.currentVideoId);
+      if (pi && pi.currentVideoId) return String(pi.currentVideoId);
     } catch (e) {}
     const m = document.documentElement.innerHTML.match(/"currentVideoId"\s*:\s*(\d+)/);
     return m ? m[1] : null;
@@ -55,6 +61,40 @@
   }
   function cookieVal(name) { const m = document.cookie.match('(?:^|; )' + name + '=([^;]+)'); return m ? m[1] : ''; }
   function httpsify(s) { return s.replace(/http:\/\/([a-z0-9.-]*\.acfun\.cn)/gi, 'https://$1'); }
+
+  // ====== 注入过渡遮罩：把切换 4K120 时的几下缓冲/闪屏藏在“加载中”遮罩后，加载稳了再揭开 ======
+  let coverEl = null, coverRAF = 0, coverSafety = 0;
+  function videoEl() { return document.querySelector('.video-area video, .player video, video'); }
+  function showCover() {
+    const v = videoEl();
+    if (!v || coverEl) return;
+    coverEl = document.createElement('div');
+    coverEl.id = 'ac4k-cover';
+    coverEl.style.cssText = 'position:fixed;z-index:999998;background:#0a0a0a;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;font:14px system-ui;pointer-events:none';
+    coverEl.innerHTML = '<span style="width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;display:inline-block;animation:ac4kspin .8s linear infinite"></span>正在加载 4K120…';
+    if (!document.getElementById('ac4k-spin-style')) {
+      const st = document.createElement('style'); st.id = 'ac4k-spin-style';
+      st.textContent = '@keyframes ac4kspin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(st);
+    }
+    (document.body || document.documentElement).appendChild(coverEl);
+    const sync = () => {
+      const vv = videoEl();
+      if (!vv || !coverEl) return;
+      const r = vv.getBoundingClientRect();
+      if (r.width < 50 || r.height < 50) { coverEl.style.display = 'none'; }
+      else { coverEl.style.display = 'flex'; coverEl.style.left = r.left + 'px'; coverEl.style.top = r.top + 'px'; coverEl.style.width = r.width + 'px'; coverEl.style.height = r.height + 'px'; }
+      coverRAF = requestAnimationFrame(sync);
+    };
+    sync();
+    clearTimeout(coverSafety);
+    coverSafety = setTimeout(hideCover, 8000); // 安全兜底：最多盖 8 秒，绝不卡住
+  }
+  function hideCover() {
+    clearTimeout(coverSafety);
+    if (coverRAF) { cancelAnimationFrame(coverRAF); coverRAF = 0; }
+    if (coverEl) { coverEl.remove(); coverEl = null; }
+  }
 
   function gm(opt) {
     return new Promise((res, rej) => {
@@ -100,9 +140,10 @@
         headers: { Cookie: 'acfun.midground.api_st=' + apiSt, acPlatform: 'IPHONE', appVersion: '6.80.0.639', market: 'appstore', Accept: 'application/json' },
       });
       const data = ORIG_PARSE(r.responseText);
-      if (data.result !== 0) { toast('接口错误 result=' + data.result + ' ' + (data.error_msg || '')); log('m3u8V2 错误', data); return false; }
+      if (data.result !== 0) { hideCover(); toast('接口错误 result=' + data.result + ' ' + (data.error_msg || '')); log('m3u8V2 错误', data); return false; }
       const pi = data.playInfo;
       if (!pi || !pi.ksPlayJson) {
+        hideCover();
         toast('未取到播放数据（可能防刷/需会员/mkey 无效）。等 1 分钟重试，或菜单设置备用 mkey');
         log('playInfo 为空', pi);
         return false;
@@ -121,37 +162,38 @@
       scheduleAutoInject();
       return true;
     } catch (e) {
-      log('fetch 失败', e); toast('获取失败: ' + e.message); return false;
+      hideCover(); log('fetch 失败', e); toast('获取失败: ' + e.message); return false;
     } finally { fetching = false; }
   }
 
-  // ================= 抢先 hook JSON.parse：精准替换主 ksPlayJson（无感生效）=================
+  // ================= 拦 JSON.parse：把主 ksPlayJson 换成 App 全阶梯 =================
+  // 必须用 hook：播放器建清晰度菜单时解析的是内部缓存的那份 ksPlayJson 字符串，
+  // 只设 currentVideoInfo.ksPlayJson 覆盖不到，必须全局拦解析才能让菜单出现 4K120。
+  // 关键：不要提前预热数据，让 APP_RAW 在播放器自然加载之后才就绪——这样 hook 只在我们
+  // 主动重载时触发，不会在自然加载/预加载阶段反复触发导致多次闪屏。
   W.JSON.parse = function (text, reviver) {
     const obj = ORIG_PARSE(text, reviver);
     try {
       if (APP_RAW && obj && obj.adaptationSet && obj.videoId && obj.videoId === APP_VID) {
-        hookApplied = true;
-        log('JSON.parse 命中主 ksPlayJson，无感替换为 App 全阶梯');
         return ORIG_PARSE(APP_RAW);
       }
     } catch (e) {}
     return obj;
   };
 
-  // ================= 自动注入：有 4K120 就自动让播放器用上 =================
+  // ================= 自动注入：等播放器自然加载稳定后，重载一次让菜单出现 4K120 =================
   function scheduleAutoInject() {
     if (autoInjectScheduled) return;
-    if (!APP_LIST || !APP_LIST.some((q) => q.type === '2160p120')) return;
+    if (!APP_LIST || !APP_LIST.some((q) => q.type === '2160p120')) { hideCover(); return; } // 无 4K120 不动播放器
     autoInjectScheduled = true;
     let waited = 0;
-    const t = setInterval(() => {
-      waited += 300;
-      if (hookApplied) { clearInterval(t); log('hook 已无感注入 4K120，无需重载'); return; }
-      if (W._AcFunPlayer && W.pageInfo && W.pageInfo.currentVideoInfo && waited >= 900) {
-        clearInterval(t); log('自动注入 4K120（数据晚到，重建菜单）'); applyToPlayer(true);
-      }
-      if (waited > 15000) clearInterval(t);
-    }, 300);
+    if (injectTimer) clearInterval(injectTimer);
+    injectTimer = setInterval(() => {
+      waited += 150;
+      const ready = W._AcFunPlayer && W.pageInfo && W.pageInfo.currentVideoInfo;
+      if (ready && waited >= 900) { clearInterval(injectTimer); injectTimer = null; log('注入 4K120（稳定后重载一次）'); applyToPlayer(true); }
+      else if (waited > 15000) { clearInterval(injectTimer); injectTimer = null; log('等待播放器就绪超时，未自动注入（可手动点按钮）'); }
+    }, 150);
   }
 
   function applyToPlayer(auto) {
@@ -160,6 +202,11 @@
     if (!cvi) { toast('未找到 pageInfo.currentVideoInfo'); return; }
     cvi.ksPlayJson = APP_RAW;
     cvi.ksPlayJsonHevc = '';
+    // 让播放器重载后自动选中最高清晰度：manifestParsed 时会按 player.firstQualityType 匹配档位选中
+    const topType = (APP_LIST && APP_LIST[0] && APP_LIST[0].type) || '2160p120';
+    try { if (W.player) W.player.firstQualityType = topType; } catch (e) {}
+    try { const k = W._AcFunPlayer && (W._AcFunPlayer.player || W._AcFunPlayer.kernel); if (k) k.firstQualityType = topType; } catch (e) {}
+    try { const h = JSON.parse(localStorage.getItem('history-config') || '{}'); h.firstQualityType = topType; localStorage.setItem('history-config', JSON.stringify(h)); } catch (e) {}
     const p = W._AcFunPlayer;
     let ok = false;
     try {
@@ -170,6 +217,8 @@
     toast(ok ? (auto ? '✅ 已自动注入 4K120，菜单可选 2160P120' : '已重建菜单，去播放器选 2160P120')
              : '已注入，但未找到重载方法（看 Console）');
     log('applyToPlayer auto=', !!auto, 'reload-called=', ok);
+    // 重载后给 4K120 一点缓冲时间，再揭开遮罩（露出已稳定的 4K120 画面）
+    setTimeout(hideCover, 2500);
   }
 
   // ================= UI =================
@@ -240,14 +289,36 @@
     document.body.appendChild(b);
   }
 
-  // ================= 启动 =================
-  function boot() {
-    addButton();
-    if (!APP_RAW && !fetching && getVideoId()) fetchAppKs(); // 尽早预取，争取赢过播放器首次解析（hook 无感生效）
+  // ================= 启动：由 URL（分P）变化驱动，不用常驻轮询 =================
+  // 切P 会改 URL（/v/acXXXX_N 末尾数字变），但属 SPA 内部跳转、不重载脚本。
+  // 所以 hook history 路由 + popstate，URL 一变就为新分P重注入。
+  let lastVideoId = null;
+  function reinjectIfChanged() {
+    const vid = getVideoId();
+    if (!vid || vid === lastVideoId) return false;
+    lastVideoId = vid;
+    if (injectTimer) { clearInterval(injectTimer); injectTimer = null; }
+    APP_RAW = null; APP_VID = null; APP_LIST = null;
+    fetching = false; autoInjectScheduled = false;
+    log('视频/分P 切换 → 重新注入 4K120，videoId=', vid);
+    showCover(); // 盖上“加载 4K120”遮罩，藏住后续切换闪屏
+    fetchAppKs();
+    return true;
   }
-  const iv = setInterval(boot, 800);
-  if (document.readyState !== 'loading') boot();
-  else document.addEventListener('DOMContentLoaded', boot);
-  setTimeout(() => clearInterval(iv), 30000);
-  setInterval(addButton, 3000);
+  // URL 变化后，播放器要一小会儿才把 videoInfo 切到新分P；短暂等待其就绪后再注入（非常驻）
+  function onNav() {
+    let n = 0;
+    const t = setInterval(() => {
+      addButton();
+      if (reinjectIfChanged() || ++n > 16) clearInterval(t); // 命中或 ~4s 兜底即停
+    }, 250);
+  }
+  ['pushState', 'replaceState'].forEach((m) => {
+    const orig = history[m];
+    history[m] = function () { const r = orig.apply(this, arguments); setTimeout(onNav, 0); return r; };
+  });
+  W.addEventListener('popstate', onNav);
+  // 首次加载
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onNav);
+  else onNav();
 })();
