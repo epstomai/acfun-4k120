@@ -10,3 +10,11 @@ probe_result.json
 probe2_result.json
 page.html
 .antigravity/
+
+# Ignore extra scripts to keep repo clean (only all.user.js is tracked)
+acfun 4k120.txt
+acfun_4k120.user.js
+acfun_4k120_player.user.js
+download_4k120.py
+probe2_endpoints.py
+probe_acfun.py
