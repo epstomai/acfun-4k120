@@ -1,0 +1,47 @@
+<li data-val="2160p120" data-index="0" data-quality-type="2160p120">2160P120</li>
+
+plink.exe -ssh -pw password root@192.168.233.143 "tcpdump -U -n -i any -s 0 -w - not port 22 2>/dev/null" | "E:\Program Files\Wireshark\Wireshark.exe" -k -i -
+
+plink.exe -batch -ssh -pw password root@192.168.233.143 "tcpdump -U -n -i any -s 0 -w - not port 22 2>/dev/null" | "E:\Program Files\Wireshark\Wireshark.exe" -k -i -
+
+plink.exe -batch -ssh -pw "" root@192.168.233.143 "tcpdump -U -n -i any -s 0 -w - not port 22 2>/dev/null" | "E:\Program Files\Wireshark\Wireshark.exe" -k -i -
+
+39536	85.490696	192.168.233.195	61.170.73.156	HTTP	190	GET /mediacloud/acfun/acfun_video/373fa4595175f6e4-bc60258b250bfe6328e7820eb0b883c2-mp4_4k_120_1.mp4?pkey=ABALIegXCGJe6IApjFvVotjsPd5QLwIpBM3b7N0_v5P9ofW-C1YK1GIRtM7O9G3fONNXeb628hpBN3nXxMDp_LKMSiPDqCCD5tDczqQ2az8Thcwb8Ts6kuky676u6jUepVvLrH_1AqfG6J24h0OrwoQEW6184czSTu2-dGP4pwHUjO2aHUsWGWMdeMVHO3bneR4zRozIDRNv0DB-6ILdmq9yBKDVQmf0Kb7hr56sfx2MiMKGdGKnExN-WGTahn-XwTQgrOWzfDx2T_nddVOQFIhfncX1I6Tktn31BELDvgoYBw HTTP/1.1 
+
+39500	85.473585	192.168.233.143	192.168.233.195	DNS	115	Standard query response 0xe831 HTTPS tx-safety-video.acfun.cn.sched.vip-dk.tdnsvod1.cn/mediacloud/acfun/acfun_video/373fa4595175f6e4-bc60258b250bfe6328e7820eb0b883c2-mp4_4k_120_1.mp4?pkey=ABALIegXCGJe6IApjFvVotjsPd5QLwIpBM3b7N0_v5P9ofW-C1YK1GIRtM7O9G3fONNXeb628hpBN3nXxMDp_LKMSiPDqCCD5tDczqQ2az8Thcwb8Ts6kuky676u6jUepVvLrH_1AqfG6J24h0OrwoQEW6184czSTu2-dGP4pwHUjO2aHUsWGWMdeMVHO3bneR4zRozIDRNv0DB-6ILdmq9yBKDVQmf0Kb7hr56sfx2MiMKGdGKnExN-WGTahn-XwTQgrOWzfDx2T_nddVOQFIhfncX1I6Tktn31BELDvgoYBw
+
+Hypertext Transfer Protocol
+     [truncated]GET /mediacloud/acfun/acfun_video/373fa4595175f6e4-bc60258b250bfe6328e7820eb0b883c2-mp4_4k_120_1.mp4?pkey=ABALIegXCGJe6IApjFvVotjsPd5QLwIpBM3b7N0_v5P9ofW-C1YK1GIRtM7O9G3fONNXeb628hpBN3nXxMDp_LKMSiPDqCCD5tDczqQ2az8Thcwb8Ts6kuky
+        [ [truncated]Expert Info (Chat/Sequence): GET /mediacloud/acfun/acfun_video/373fa4595175f6e4-bc60258b250bfe6328e7820eb0b883c2-mp4_4k_120_1.mp4?pkey=ABALIegXCGJe6IApjFvVotjsPd5QLwIpBM3b7N0_v5P9ofW-C1YK1GIRtM7O9G3fONNXeb628hpBN3nXxMDp_LKMSiP]
+        Request Method: GET
+        Request URI [truncated]: /mediacloud/acfun/acfun_video/373fa4595175f6e4-bc60258b250bfe6328e7820eb0b883c2-mp4_4k_120_1.mp4?pkey=ABALIegXCGJe6IApjFvVotjsPd5QLwIpBM3b7N0_v5P9ofW-C1YK1GIRtM7O9G3fONNXeb628hpBN3nXxMDp_LKMSiPDqCCD5tDczqQ2az8Thcw
+        Request Version: HTTP/1.1
+    Host: tx-safety-video.acfun.cn\r\n
+    Accept: */*\r\n
+     [truncated]Cookie: acfun.midground.api_st=ChZhY2Z1bi5taWRncm91bmQuYXBpLnN0EmAkvlQhVcTdn5etBMh9AChD7NfcArP7GtOHbLl7LzxTen5rYeu0OcuKNGreFqCkQLVSei8fCYhco4Vw7N9z77sopXqCGzzCN7PUrkPbZiBRZGqMFj9O1_5Cx7lODn2CbasaEtD6IgjFT54_die_3ATui5rfxCIgRLp
+        Cookie pair [truncated]: acfun.midground.api_st=ChZhY2Z1bi5taWRncm91bmQuYXBpLnN0EmAkvlQhVcTdn5etBMh9AChD7NfcArP7GtOHbLl7LzxTen5rYeu0OcuKNGreFqCkQLVSei8fCYhco4Vw7N9z77sopXqCGzzCN7PUrkPbZiBRZGqMFj9O1_5Cx7lODn2CbasaEtD6IgjFT54_die_3ATui5rfxC
+        Cookie pair: __NSWJ=
+        Cookie pair: appver=6.77.1.632
+        Cookie pair: countryCode=--
+        Cookie pair: gid=DFPB1C3703AEB8DBDF56D982A742CEF622B891344327E0FAF478A8466CF6872E
+        Cookie pair: kpf=IPHONE
+        Cookie pair: kpn=ACFUN_APP
+        Cookie pair: language=zh-Hans-CN
+        Cookie pair: mcc=6553565535
+        Cookie pair: mod=iPhone13%2C4
+        Cookie pair: net=WIFI
+        Cookie pair: sys=iOS_18.4.1
+        Cookie pair: ver=6.77
+        Cookie pair [truncated]: acPasstoken=ChVpbmZyYS5hY2Z1bi5wYXNzdG9rZW4ScN3Wy0UaULyLL8IjuHyurAg7P-u2b-2hCgegLc6b-LOB3frs6vJG9ZVNYKfwVqALQC35NxspHwYjZT9zPCgkWKUkpMU2iqpz-N1OQ3Po-P_fRTResb-HGrqa7xsAEvHMgikjF4-5_qcsWnDY1KVM8-MaEnUrgS1bVMzGAxrxv
+        Cookie pair: auth_key=472630
+        Cookie pair: did=225D4030-819A-41FE-8A77-96B578539C3B
+        Cookie pair: old_token=5c4146a3945fab2b7376cd51e3e6a46e
+        Cookie pair: userId=472630
+        Cookie pair: _did=H5_344721134CDE184
+    User-Agent: AcFun/632 CFNetwork/3826.500.111.2.2 Darwin/24.4.0\r\n
+    Accept-Language: zh-CN,zh-Hans;q=0.9\r\n
+    Accept-Encoding: gzip, deflate\r\n
+    Connection: keep-alive\r\n
+    \r\n
+    [Full request URI [truncated]: http://tx-safety-video.acfun.cn/mediacloud/acfun/acfun_video/373fa4595175f6e4-bc60258b250bfe6328e7820eb0b883c2-mp4_4k_120_1.mp4?pkey=ABALIegXCGJe6IApjFvVotjsPd5QLwIpBM3b7N0_v5P9ofW-C1YK1GIRtM7O9G3fONNXeb628hp]
+    [HTTP request 1/1]

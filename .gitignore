@@ -1,0 +1,12 @@
+AcFun-acfunh5-release-*
+*.apk
+*.dex
+*.har
+temp_smali/
+credentials.json
+m3u8v2_response.json
+m3u8v2_success_playinfo.json
+probe_result.json
+probe2_result.json
+page.html
+.antigravity/
